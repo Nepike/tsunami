@@ -5,8 +5,6 @@ from scipy.integrate import solve_ivp
 from mpl_toolkits.mplot3d import Axes3D
 
 
-траектории пакетно и разностно
-
 # Параметры среды
 L = 500  # Размер области
 dx = 5  # Шаг сетки
