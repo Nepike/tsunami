@@ -11,15 +11,18 @@ sources = []
 
 def add_source():
     multiplier = float(multiplier_var.get())
-    print(multiplier)
     L = int(length_var.get()) * multiplier
 
     x = float(source_x_var.get()) * L / 100
     y = float(source_y_var.get()) * L / 100
-    height = float(source_height_var.get())*multiplier
-    width = float(source_width_var.get())*multiplier
-    sources.append({"x": x, "y": y, "height": height, "width": width})
-    sources_listbox.insert(tk.END, f"Источник: x={x:.2f}, y={y:.2f}, h={height}, w={width}")
+    height = float(source_height_var.get()) * multiplier
+    width = float(source_width_var.get()) * multiplier
+    delay = float(source_delay_var.get())  # Добавить задержку
+    sources.append({"x": x, "y": y, "height": height, "width": width, "delay": delay})
+    sources_listbox.insert(
+        tk.END,
+        f"Источник: x={x:.2f}, y={y:.2f}, h={height}, w={width}, delay={delay}s"
+    )
 
 
 def clear_sources():
@@ -37,6 +40,10 @@ def run_simulation():
     hill_width = float(hill_width_var.get())*multiplier
     hill_x = L*float(hill_x_var.get())/100
     hill_y = L*float(hill_y_var.get())/100
+
+    for source in sources:
+        source['used'] = False
+
 
 
     # Пространственные параметры
@@ -75,23 +82,18 @@ def run_simulation():
     g = 9.81
     c = speed_multiplier*np.sqrt(g * D)  # Волновая скорость зависит от глубины
 
-    def initial_wave(x, y, sources):
-        """Создание начальной волны из нескольких источников.
-
-        sources: список источников, где каждый источник — словарь с ключами:
-            - "x": координата X центра
-            - "y": координата Y центра
-            - "height": высота волны
-            - "width": ширина волны
-        """
+    def initial_wave(x, y, sources, time):
+        """Создание волны с учётом временной задержки."""
         wave = np.zeros_like(x)
         for source in sources:
-            wave += source["height"] * np.exp(
-                -((x - source["x"]) ** 2 + (y - source["y"]) ** 2) / (2 * source["width"] ** 2)
-            )
+            if time >= source["delay"] and not source["used"]:  # Проверяем, активен ли источник
+                wave += source["height"] * np.exp(
+                    -((x - source["x"]) ** 2 + (y - source["y"]) ** 2) / (2 * source["width"] ** 2)
+                )
+                source["used"] = True
         return wave
 
-    eta = D0 + initial_wave(X, Y, sources)
+    eta = D0 + initial_wave(X, Y, sources, 0)
     eta_prev = eta.copy()
     eta_next = np.zeros_like(eta)
 
@@ -113,6 +115,8 @@ def run_simulation():
 
     def update(frame):
         nonlocal eta, eta_prev, eta_next, wave_surf
+        global sources
+
 
         # Разностная схема для волнового уравнения
         eta_next[1:-1, 1:-1] = (2 * eta[1:-1, 1:-1] - eta_prev[1:-1, 1:-1] +
@@ -122,6 +126,12 @@ def run_simulation():
                                         (eta[1:-1, 2:] - 2 * eta[1:-1, 1:-1] + eta[1:-1, :-2])
                                     )
                                 ))
+        time = frame * dt
+        for source in sources:
+            if not source["used"] and time >= source["delay"]:
+                wave = initial_wave(X, Y, sources, time)
+                eta_next += wave
+                eta += wave
 
         # Условия Неймана (нулевой градиент на границах)
         eta_next[0, 1:-1] = eta_next[1, 1:-1]  # Верхняя граница
@@ -142,7 +152,7 @@ def run_simulation():
 
         return cax2d, wave_surf, depth_surf
 
-    ani = FuncAnimation(fig, update, frames=t_steps, interval=50)
+    ani = FuncAnimation(fig, update, frames=t_steps, interval=30)
     if bool(save_gif_var.get()):
         now = datetime.datetime.now()
         timestamp = now.strftime("%Y%m%d_%H%M%S")
@@ -225,12 +235,17 @@ ttk.Label(root, text="Ширина источника:").grid(row=4, column=2, p
 source_width_var = tk.StringVar(value="10")
 ttk.Entry(root, textvariable=source_width_var).grid(row=4, column=3, padx=5, pady=5)
 
+ttk.Label(root, text="Задержка источника (сек):").grid(row=5, column=2, padx=5, pady=5)
+source_delay_var = tk.StringVar(value="0")
+ttk.Entry(root, textvariable=source_delay_var).grid(row=5, column=3, padx=5, pady=5)
+
+
 ttk.Button(root, text="Добавить источник", command=add_source).grid(row=4, column=4, columnspan=1, pady=5)
 ttk.Button(root, text="Очистить источники", command=clear_sources).grid(row=6, column=4, columnspan=1, pady=5)
 
-ttk.Label(root, text="Источники:").grid(row=5, column=2, padx=5, pady=5)
-sources_listbox = tk.Listbox(root, height=5, width=45)
-sources_listbox.grid(row=5, column=3, columnspan=2, padx=5, pady=5)
+ttk.Label(root, text="Источники:").grid(row=7, column=2, padx=5, pady=5)
+sources_listbox = tk.Listbox(root, height=10, width=55)
+sources_listbox.grid(row=7, column=3, columnspan=2, padx=5, pady=15)
 
 
 root.mainloop()

@@ -7,7 +7,7 @@ from scipy.integrate import solve_ivp
 # Параметры системы
 g = 9.81  # Ускорение свободного падения
 D0 = 50  # Базовая глубина
-hill_height = 30
+hill_height = 40
 hill_width = 20
 hill_x, hill_y = 50, 50  # Центр подводной структуры
 L = 100  # Размер области
@@ -19,7 +19,7 @@ def depth_profile(x, y, profile_type):
     elif profile_type == "Впадина":
         return D0 + hill_height * np.exp(-((x - hill_x) ** 2 + (y - hill_y) ** 2) / (2 * hill_width ** 2))
     elif profile_type == "Хребет":
-        return D0 - hill_height * np.exp(-(x - hill_x + L / 5) ** 2 / (2 * hill_width ** 2))
+        return D0 - hill_height * np.exp(-(x - hill_x) ** 2 / (2 * hill_width ** 2))
     elif profile_type == "Плато":
         return D0 - hill_height * (x / L) + 1
     elif profile_type == "Случайный":
@@ -32,21 +32,21 @@ def depth_profile(x, y, profile_type):
 # Градиенты глубины
 def depth_gradients(x, y, profile_type):
     if profile_type == "Гора":
-        grad_x = -hill_height * (x - hill_x) * np.exp(
-            -((x - hill_x) ** 2 + (y - hill_y) ** 2) / (2 * hill_width ** 2)) / hill_width ** 2
-        grad_y = -hill_height * (y - hill_y) * np.exp(
-            -((x - hill_x) ** 2 + (y - hill_y) ** 2) / (2 * hill_width ** 2)) / hill_width ** 2
-    elif profile_type == "Впадина":
         grad_x = +hill_height * (x - hill_x) * np.exp(
             -((x - hill_x) ** 2 + (y - hill_y) ** 2) / (2 * hill_width ** 2)) / hill_width ** 2
         grad_y = +hill_height * (y - hill_y) * np.exp(
+            -((x - hill_x) ** 2 + (y - hill_y) ** 2) / (2 * hill_width ** 2)) / hill_width ** 2
+    elif profile_type == "Впадина":
+        grad_x = -hill_height * (x - hill_x) * np.exp(
+            -((x - hill_x) ** 2 + (y - hill_y) ** 2) / (2 * hill_width ** 2)) / hill_width ** 2
+        grad_y = -hill_height * (y - hill_y) * np.exp(
             -((x - hill_x) ** 2 + (y - hill_y) ** 2) / (2 * hill_width ** 2)) / hill_width ** 2
     elif profile_type == "Хребет":
         grad_x = hill_height * (x - hill_x ) * np.exp(
             -(x - hill_x) ** 2 / (2 * hill_width ** 2)) / hill_width ** 2
         grad_y = 0
     elif profile_type == "Плато":
-        grad_x = hill_height / L
+        grad_x = -hill_height / L
         grad_y = 0
     else:
         grad_x = grad_y = 0  # Для случайного и многослойного профиля градиенты не определены
@@ -91,7 +91,7 @@ for cond in initial_conditions:
 x = np.linspace(0, L, 200)
 y = np.linspace(0, L, 200)
 X, Y = np.meshgrid(x, y)
-Z = depth_profile(X, Y, profile_type)
+Z = D0 - depth_profile(X, Y, profile_type)
 
 # Настройка анимации
 fig, ax = plt.subplots(figsize=(6, 6))
