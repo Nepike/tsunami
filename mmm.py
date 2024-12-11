@@ -92,7 +92,7 @@ def run_simulation():
 
     save_animation = save_var.get()
 
-    num_directions = 160
+    num_directions = 150
     angles = np.linspace(0, 2 * np.pi, num_directions, endpoint=False)
     initial_conditions = [[x0, y0, radius * np.cos(angle), radius * np.sin(angle)] for angle in angles]
 
@@ -116,10 +116,9 @@ def run_simulation():
     cmap = ax.imshow(Z, extent=(0, L, 0, L), origin="lower", cmap="viridis", alpha=0.5)
     fig.colorbar(cmap, ax=ax, label="Высота (м)")
 
-    initial_conditions_str = (
+    initial_conditions_str = (f"Профиль дна={profile_type}\n"
                               f"Импульс x0={x0:.1f}, y0={y0:.1f}\n"
                               f"Импульс v={radius:.1f}\n"
-                              f"Профиль дна={profile_type}\n"
                               f"Структура x={hill_x:.1f}, y={hill_y:.1f}\n"
                               f"Структура w={hill_width}, h={hill_height}")
     ax.set_title(initial_conditions_str)
@@ -130,7 +129,7 @@ def run_simulation():
     ax.set_ylabel("y")
 
     # Анимация траекторий
-    lines = [ax.plot([], [], lw=2)[0] for _ in initial_conditions]
+    lines = [ax.plot([], [], lw=1, color="black")[0] for _ in initial_conditions]
 
     def update(frame):
         for line, trajectory in zip(lines, trajectories):
@@ -157,7 +156,7 @@ frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 # Ввод параметров
 x0_var = tk.StringVar(value="20")
 y0_var = tk.StringVar(value="20")
-radius_var = tk.StringVar(value="15")
+radius_var = tk.StringVar(value="9")
 hill_height_var = tk.StringVar(value="40")
 hill_width_var = tk.StringVar(value="20")
 hill_x_var = tk.StringVar(value="50")
