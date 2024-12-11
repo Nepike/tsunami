@@ -104,12 +104,12 @@ def run_simulation():
     ax2d = fig.add_subplot(121)
     ax2d.set_xlim(0, L)
     ax2d.set_ylim(0, L)
-    cax2d = ax2d.imshow(eta, cmap="viridis", vmin=0, vmax=D0 + max([source['height'] for source in sources]+[0]), origin="lower", extent=[0, L, 0, L])
+    cax2d = ax2d.imshow(eta, cmap="viridis", vmin=0, vmax=D0 + 0.8*max([source['height'] for source in sources]+[0]), origin="lower", extent=[0, L, 0, L])
     fig.colorbar(cax2d, ax=ax2d, label="Высота волны")
 
     # 3D график
     ax3d = fig.add_subplot(122, projection='3d')
-    ax3d.set_zlim(0, D0 + max([source['height'] for source in sources]+[0]))
+    ax3d.set_zlim(0, D0 + 0.8*max([source['height'] for source in sources]+[0]))
     wave_surf = ax3d.plot_surface(X, Y, eta, cmap="viridis", edgecolor="k", alpha=0.8)
     depth_surf = ax3d.plot_surface(X, Y, -D + D0, cmap="copper", edgecolor="none", alpha=0.6)
 
